@@ -2,8 +2,10 @@ package kaniko
 
 import (
 	"context"
-	"github.com/docker/distribution/reference"
 	"path/filepath"
+
+	"github.com/docker/distribution/reference"
+	"gopkg.in/yaml.v2"
 
 	"github.com/docker/docker/api/types"
 	"github.com/pkg/errors"
@@ -269,6 +271,40 @@ func (b *Builder) getBuildPod(buildID string, options *types.ImageBuildOptions, 
 		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env, k8sv1.EnvVar{
 			Name:  k,
 			Value: v,
+		})
+	}
+
+	// add extra env vars
+	for k, v := range kanikoOptions.EnvFrom {
+		if len(pod.Spec.Containers[0].Env) == 0 {
+			pod.Spec.Containers[0].Env = []k8sv1.EnvVar{}
+		}
+
+		valueFrom := &k8sv1.EnvVarSource{}
+		asYAML, err := yaml.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+		err = yaml.Unmarshal(asYAML, valueFrom)
+		if err != nil {
+			return nil, err
+		}
+
+		value := ""
+		if valueFrom.FieldRef != nil {
+			value = "fieldRef"
+		} else if valueFrom.ResourceFieldRef != nil {
+			value = "resourceFieldRef"
+		} else if valueFrom.ConfigMapKeyRef != nil {
+			value = "configMapKeyRef"
+		} else if valueFrom.SecretKeyRef != nil {
+			value = "secretKeyRef"
+		}
+
+		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, k8sv1.EnvVar{
+			Name:      k,
+			Value:     value,
+			ValueFrom: valueFrom,
 		})
 	}
 

@@ -1,13 +1,16 @@
 package loader
 
 import (
+	"path/filepath"
+
 	"github.com/loft-sh/devspace/pkg/devspace/config/versions/latest"
 	"github.com/loft-sh/devspace/pkg/devspace/deploy/deployer/helm/merge"
 	"github.com/loft-sh/devspace/pkg/util/log"
 	"github.com/loft-sh/devspace/pkg/util/yamlutil"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
-	"path/filepath"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // ValidInitialSyncStrategy checks if strategy is valid
@@ -195,6 +198,21 @@ func validateImages(config *latest.Config) error {
 			return errors.Errorf("multiple image definitions with the same image name are not allowed")
 		}
 		images[imageConf.Image] = true
+
+		// Check kaniko env vars
+		if imageConf.Build != nil && imageConf.Build.Kaniko != nil && imageConf.Build.Kaniko.EnvFrom != nil {
+			for k, v := range imageConf.Build.Kaniko.EnvFrom {
+				valueFrom := &corev1.EnvVarSource{}
+				asYAML, err := yaml.Marshal(v)
+				if err != nil {
+					return errors.Errorf("images.%s.build.kaniko.envFrom.%d is invalid. Cannot convert it back to yaml: %v", imageConfigName, k, err)
+				}
+				err = yaml.Unmarshal(asYAML, valueFrom)
+				if err != nil {
+					return errors.Errorf("images.%s.build.kaniko.envFrom.%d is invalid. Doesn't match the valueFrom-Pattern: %v", imageConfigName, k, err)
+				}
+			}
+		}
 	}
 
 	return nil

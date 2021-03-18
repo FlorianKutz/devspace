@@ -174,6 +174,9 @@ type KanikoConfig struct {
 	// extra environment variables that will be added to the build init container
 	InitEnv map[string]string `yaml:"initEnv,omitempty" json:"initEnv,omitempty"`
 
+	// extra environment variables from kube yaml files that will be added to the build kaniko container
+	EnvFrom map[string]interface{} `yaml:"envFrom,omitempty" json:"fromEnv,omitempty"`
+
 	// extra environment variables that will be added to the build kaniko container
 	Env map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
 
