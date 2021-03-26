@@ -2,9 +2,7 @@ package vars
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"regexp"
-	"strconv"
 )
 
 // VarMatchRegex is the regex to check if a value matches the devspace var format
@@ -48,12 +46,10 @@ func ParseString(value string, replace ReplaceVarFn) (interface{}, error) {
 			case string:
 				newMatchStr = v
 			default:
-				if forceString {
+				if forceString || len(matchStr) != len(value) {
 					newMatchStr = fmt.Sprintf("%v", v)
-				} else if len(matchStr) == len(value) {
-					return v, nil
 				} else {
-					return nil, errors.Errorf("variable '%s' output '%v' is not a string, however it is used as part of a string '%s'", matchStr, v, value)
+					return v, nil
 				}
 			}
 		}
@@ -64,18 +60,6 @@ func ParseString(value string, replace ReplaceVarFn) (interface{}, error) {
 		} else {
 			newValue += value[match[1]:matches[index+1][0]]
 		}
-	}
-
-	// Should we force the string
-	if forceString {
-		return newValue, nil
-	}
-
-	// Try to convert new value to boolean or integer
-	if i, err := strconv.Atoi(newValue); err == nil {
-		return i, nil
-	} else if b, err := strconv.ParseBool(newValue); err == nil {
-		return b, nil
 	}
 
 	return newValue, nil

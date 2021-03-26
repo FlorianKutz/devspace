@@ -3,11 +3,12 @@ package configure
 import (
 	contextpkg "context"
 	"fmt"
-	"github.com/loft-sh/devspace/pkg/devspace/kubectl"
 	"io/ioutil"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/loft-sh/devspace/pkg/devspace/kubectl"
 
 	"github.com/loft-sh/devspace/pkg/devspace/build/builder/helper"
 	"github.com/loft-sh/devspace/pkg/devspace/config/versions/latest"
@@ -63,8 +64,8 @@ func (m *manager) newImageConfigFromDockerfile(imageName, dockerfile, context st
 	var (
 		dockerUsername = ""
 		retImageConfig = &latest.ImageConfig{
-			InjectRestartHelper:   true,
-			PreferSyncOverRebuild: true,
+			InjectRestartHelper: true,
+			RebuildStrategy:     latest.RebuildStrategyIgnoreContextChanges,
 			AppendDockerfileInstructions: []string{
 				"USER root",
 			},
@@ -320,7 +321,19 @@ func (m *manager) getRegistryURL(dockerClient docker.Client) (string, error) {
 				break
 			}
 		} else {
-			return "", errors.Errorf("Registry authentication failed for %s.\n         %s", registryURL, registryLoginHint)
+			m.log.Warnf("Registry authentication failed for %s.\n         %s", registryURL, registryLoginHint)
+			answer, questionErr := m.log.Question(&survey.QuestionOptions{
+				Question: "Are you sure you want to use the registry '" + registryURL + "' even though the authentication failed?",
+				Options: []string{
+					"No",
+					"Yes",
+				},
+			})
+			if questionErr != nil {
+				return "", questionErr
+			} else if answer == "No" {
+				return "", errors.Errorf("Registry authentication failed for %s.\n         %s", registryURL, registryLoginHint)
+			}
 		}
 	}
 

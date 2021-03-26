@@ -29,7 +29,7 @@ if [[ "$(pwd)" != "${DEVSPACE_ROOT}" ]]; then
 fi
 
 GO_BUILD_CMD="go build -a"
-GO_BUILD_LDFLAGS="-s -w -X main.commitHash=${COMMIT_HASH} -X main.buildDate=${DATE} -X main.version=${VERSION}"
+GO_BUILD_LDFLAGS="-s -w -X main.commitHash=${COMMIT_HASH} -X main.buildDate=${DATE} -X main.version=${VERSION} -X github.com/loft-sh/devspace/pkg/devspace/config/generated.EncryptionKey=$ENCRYPTION_KEY"
 
 if [[ -z "${DEVSPACE_BUILD_PLATFORMS}" ]]; then
     DEVSPACE_BUILD_PLATFORMS="linux windows darwin"
@@ -57,7 +57,7 @@ shasum -a 256 "${DEVSPACE_ROOT}/release/ui.tar.gz" > "${DEVSPACE_ROOT}/release/u
 
 # build devspace helper
 echo "Building devspace helper"
-GOARCH=386 GOOS=linux go build -ldflags "-s -w -X github.com/loft-sh/devspace/helper/cmd.version=${VERSION}" -o "${DEVSPACE_ROOT}/release/devspacehelper" helper/main.go
+GOARCH=amd64 GOOS=linux go build -ldflags "-s -w -X github.com/loft-sh/devspace/helper/cmd.version=${VERSION}" -o "${DEVSPACE_ROOT}/release/devspacehelper" helper/main.go
 shasum -a 256 "${DEVSPACE_ROOT}/release/devspacehelper" > "${DEVSPACE_ROOT}/release/devspacehelper".sha256
 
 # build bin data

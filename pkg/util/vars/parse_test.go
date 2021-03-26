@@ -64,12 +64,12 @@ func TestParse(t *testing.T) {
 		"Return integer": &testCase{
 			input:   "${integer}",
 			replace: func(value string) (interface{}, error) { return "1", nil },
-			output:  1,
+			output:  "1",
 		},
 		"Return bool": &testCase{
 			input:   "${bool}",
 			replace: func(value string) (interface{}, error) { return "true", nil },
-			output:  true,
+			output:  "true",
 		},
 		"Return error": &testCase{
 			input:   "${bool}",
@@ -88,6 +88,11 @@ func TestParse(t *testing.T) {
 		},
 		"Force String 2": &testCase{
 			input:   "$!{Test}",
+			replace: func(value string) (interface{}, error) { return "123", nil },
+			output:  "123",
+		},
+		"Force String 3": &testCase{
+			input:   "${Test}",
 			replace: func(value string) (interface{}, error) { return "123", nil },
 			output:  "123",
 		},

@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"sort"
 
+	surveypkg "github.com/AlecAivazis/survey/v2"
 	"github.com/pkg/errors"
-	surveypkg "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // QuestionOptions defines a question and its options
@@ -114,6 +114,9 @@ func (s *survey) Question(params *QuestionOptions) (string, error) {
 	if err != nil {
 		// Keyboard interrupt
 		os.Exit(0)
+	}
+	if answers.Question == "" && len(params.Options) > 0 {
+		answers.Question = params.Options[0]
 	}
 
 	return answers.Question, nil

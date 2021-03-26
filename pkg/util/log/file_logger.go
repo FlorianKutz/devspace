@@ -2,11 +2,11 @@ package log
 
 import (
 	"errors"
-	"os"
 	"sync"
 
 	"github.com/loft-sh/devspace/pkg/util/survey"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"k8s.io/apimachinery/pkg/util/runtime"
 )
 
@@ -22,6 +22,12 @@ type fileLogger struct {
 	logger *logrus.Logger
 }
 
+// SetFakeFileLogger overwrites a fileLogger with a fake logger
+// Only use this in tests
+func SetFakeFileLogger(key string, logger Logger) {
+	logs[key] = logger
+}
+
 // GetFileLogger returns a logger instance for the specified filename
 func GetFileLogger(filename string) Logger {
 	logsMutext.Lock()
@@ -33,15 +39,12 @@ func GetFileLogger(filename string) Logger {
 			logger: logrus.New(),
 		}
 		newLogger.logger.Formatter = &logrus.JSONFormatter{}
-
-		os.MkdirAll(Logdir, os.ModePerm)
-
-		logFile, err := os.OpenFile(Logdir+filename+".log", os.O_APPEND|os.O_CREATE|os.O_RDWR, os.ModePerm)
-		if err != nil {
-			newLogger.Warnf("Unable to open " + filename + " log file. Will log to stdout.")
-		} else {
-			newLogger.logger.SetOutput(logFile)
-		}
+		newLogger.logger.SetOutput(&lumberjack.Logger{
+			Filename:   Logdir + filename + ".log",
+			MaxAge:     12,
+			MaxBackups: 4,
+			MaxSize:    10 * 1024 * 1024,
+		})
 
 		logs[filename] = newLogger
 	}
